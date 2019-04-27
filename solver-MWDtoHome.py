@@ -48,25 +48,26 @@ def solve(client):
                 print("bestVwithMW: maxVoteNumW Error")
                 return 0
 
-        # Try remote on BESTVW with the first edge in shortest path to home
-        # The goal is get location of bot
+        # Try remote the bot on BESTVW with the first edge in shortest path to home
+        # If it works, remote bot to home
         def revealV(bestVW):
+            print("Home",h)
             Homepath = dijkstra(bestVW, h)
+            print("Homepath",Homepath)
             HomeCost = 0
             for i in range(len(Homepath) - 1):
                 HomeCost += client.G[Homepath[i]][Homepath[i+1]]['weight']
+            print("Homecost",HomeCost)
+            print("direct to home cost", client.G[bestVW][h]['weight'])
             #Make sure we don't use this vertex again, assign a negative value
             reportTrue[bestVW] = -10
-            get = client.remote(Homepath[0], Homepath[1])
-            if get == 0:
-                return bestVW, False
+            for i in range(len(Homepath) - 1):
+                get = client.remote(Homepath[i], Homepath[i+1])
+                if get == 0:
+                    return bestVW, False
             return bestVW, True
 
 
-        # 0.910298 is number which has: (0.910298) ^ 49 = 0.01
-        # Because if a student scout 49 times right, his scouting result becomes unreliable!
-        # 49 is the half of vertices numbers (99 / 2)
-        # Feel free to tweak 0.910298
         epsilon = 1 - 0.910298
         #Adjust weights of students and return whether we remote a bot to home
         def studentsWeightAdjust(v, result):
@@ -101,74 +102,32 @@ def solve(client):
 
     #A Dijkstra return path from S to T.
     def dijkstra(s, t):
-        if s != t:
-            dist = [math.inf for i in range(V)]
-            prev = [-1 for i in range(V)]
-            dist[s] = 0
-            H = queue.PriorityQueue()
-            for v in range(1, V):
-                H.put((dist[v],v))
-            while not H.empty():
-                uPair = H.get()
-                u = uPair[1]
-                # print("u",u)
-                for v in range(1,V):
-                    if u != v:
-                        # print("u",u,"v",v)
-                        edgeWeight = client.G[u][v]['weight']
-                        # print("edgeWeight",edgeWeight)
-                        if dist[v] > dist[u] + edgeWeight:
-                            dist[v] =  dist[u] + edgeWeight
-                            H.put((dist[v],v))
-                            prev[v] = u
-            path = []
-            pointer = t
-            while pointer != s:
-                path.append(pointer)
-                pointer = prev[pointer]
-            path.append(pointer)
-            return path[::-1]
-        else:
-            return 0
-
-    #Calculate the total weight of entire PATH which from s to t
-    def pathCost(path):
-        cost = 0
-        for i in range(len(path) - 1):
-            cost += client.G[path[i]][path[i+1]]['weight']
-        return cost
-
-
-        #Find a lowest cost vertex for bot (labeled with its location) in BOTS to be together!
-    #All bots must go there on their own
-    def goodVToMeet(bots):
-        lowestCost = math.inf
-        goodV = -1
+        dist = [math.inf for i in range(V)]
+        prev = [-1 for i in range(V)]
+        dist[s] = 0
+        H = queue.PriorityQueue()
         for v in range(1, V):
-            totalCost = 0
-            for b in bots:
-                if b != v and b != h:
-                    bCost = pathCost(dijkstra(b, v))
-                    totalCost += bCost
-            if totalCost < lowestCost:
-                lowestCost = totalCost
-                goodV = v
-        return lowestCost, [goodV] * len(bots)
-
-    #A DP (brunt) based on goodVToMeet. Try to find best vertex to meet!
-    #All bots can meet other bots before go there.
-    # def bestVToMeet(bots):
-    #     #Choose a bot b. After other bots meet together, b and other bots go other place to meet
-    #     isolatedB = random.randint(0,len(bots))
-    #     leftSideB = bots[0:isolatedB]
-    #     rightSideB = bots[isolatedB+1:len(bots)]
-    #     return min(goodVToMeet(bots))
-
-
-    def goTo(path):
-        if path != 0 and len(path) > 0:
-            for i in range(len(path) - 1):
-                client.remote(path[i], path[i+1])
+            H.put((dist[v],v))
+        while not H.empty():
+            uPair = H.get()
+            u = uPair[1]
+            # print("u",u)
+            for v in range(1,V):
+                if u != v:
+                    # print("u",u,"v",v)
+                    edgeWeight = client.G[u][v]['weight']
+                    # print("edgeWeight",edgeWeight)
+                    if dist[v] > dist[u] + edgeWeight:
+                        dist[v] =  dist[u] + edgeWeight
+                        H.put((dist[v],v))
+                        prev[v] = u
+        path = []
+        pointer = t
+        while pointer != s:
+            path.append(pointer)
+            pointer = prev[pointer]
+        path.append(pointer)
+        return path[::-1]
 
 
 
@@ -195,30 +154,15 @@ def solve(client):
     studentWeights = [0] + [1 for i in range(1, client.students + 1)]
     studentWrongtimes = [0] + [0 for i in range(1, client.students + 1)]
 
+        
     guessAll()
     
-    #Determine the location of bots
+
+
     while len(client.bot_locations) < 5:
         multiWeightsDecide()
 
-    # print(client.bot_locations)
 
-    #Get meeting vertex. It takes long time to run it.
-    meetV = goodVToMeet(client.bot_locations)
-    # print("Home",h)
-    # print(meetV)
-    # print(client.bot_locations)
-
-    #All bots go to meeting vertex
-    for b in client.bot_locations:
-        if b != meetV[1][0] and b != h:
-            goTo(dijkstra(b, meetV[1][0]))
-    
-
-    #All bots go home
-    finalPath = dijkstra(meetV[1][0], h)
-    goTo(finalPath)
-            
     client.end()
 
 
