@@ -4,6 +4,7 @@ import random
 import math
 import queue
 luckyStudent = -1
+guessCount = 0
 def solve(client):
     client.end()
     client.start()
@@ -37,13 +38,18 @@ def solve(client):
                 for v, guess in guessResults:
                     if v != -1 and v not in usedV:
                         if guess[luckyStudent]:
+                            print("lucky guy says we should remote",v)
                             return v
+                print("bestVwithMW: maxVoteNumW Error")
                 return -1
             
             maxVoteNumW = max(reportTrueW)
             if maxVoteNumW >= 0:
                 bestVW = reportTrueW.index(maxVoteNumW)
                 usedV.add(bestVW)
+                global guessCount
+                guessCount += 1
+                print("guessCount",guessCount)
                 return bestVW
             else:
                 print("bestVwithMW: maxVoteNumW Error")
@@ -82,9 +88,12 @@ def solve(client):
                     else:
                         studentWrongtimes[s] += 1
                         if studentWrongtimes[s] >= 50:
+                            print("lucky!",s)
                             luckyStudent = s
                             return True
                 sWeightSUM = sum(studentWeights, 1)
+                # x_i = w_s / sum(w)A
+                print("current lucky but not 50 student is",studentWrongtimes.index(max(studentWrongtimes)),"he guess wrong ", max(studentWrongtimes), " times")
                 for s in range(1, client.students + 1):
                     studentWeights[s] = studentWeights[s] / sWeightSUM
                 return True
@@ -96,9 +105,12 @@ def solve(client):
                     else:
                         studentWrongtimes[s] += 1
                         if studentWrongtimes[s] >= 50:
+                            print("lucky!",s)
                             luckyStudent = s
                             return False
                 sWeightSUM = sum(studentWeights, 1)
+                # x_i = w_s / sum(w)
+                print("current lucky but not 50 student is",studentWrongtimes.index(max(studentWrongtimes)),"he guess wrong ", max(studentWrongtimes), " times")
                 for s in range(1, client.students + 1):
                     studentWeights[s] = studentWeights[s] / sWeightSUM
                 return False
@@ -143,7 +155,7 @@ def solve(client):
         return cost
 
 
-    #Find a lowest cost vertex for bot (labeled with its location) in BOTS to be together!
+        #Find a lowest cost vertex for bot (labeled with its location) in BOTS to be together!
     #All bots must go there on their own
     def goodVToMeet(bots):
         lowestCost = math.inf
