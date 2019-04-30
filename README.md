@@ -1,3 +1,3 @@
-# CS170 Project Skeleton
+# CS170 Project
 
-See [the Guavabot website](http://guavabot.cs170.org/) to get started!
+A algorithm to find all Guavabot(Not kiwibot) and let them go home!
