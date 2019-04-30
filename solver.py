@@ -37,6 +37,7 @@ def solve(client):
                 for v, guess in guessResults:
                     if v != -1 and v not in usedV:
                         if guess[luckyStudent]:
+                            usedV.add(v)
                             return v
                 return -1
             
